@@ -1,0 +1,50 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.24 # Use a Docker version as per your requirements
+        options: --privileged
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image for testing
+        run: docker build -t smaingi1/react-test -f ./client/Dockerfile.dev ./client
+
+      - name: Run tests
+        run: docker run -e CI=true smaingi1/react-test npm test
+
+  build-and-push:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker images
+        run: |
+          docker build -t smaingi1/multi-client ./client
+          docker build -t smaingi1/multi-nginx ./nginx
+          docker build -t smaingi1/multi-server ./server
+          docker build -t smaingi1/multi-worker ./worker
+
+      - name: Log in to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_ID }}" --password-stdin
+
+      - name: Push Docker images to DockerHub
+        run: |
+          docker push smaingi1/multi-client
+          docker push smaingi1/multi-nginx
+          docker push smaingi1/multi-server
+          docker push smaingi1/multi-worker
