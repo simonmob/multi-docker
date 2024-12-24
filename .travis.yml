@@ -13,3 +13,10 @@ after_success:
   - docker build -t smaingi1/multi-nginx ./nginx
   - docker build -t smaingi1/multi-server ./server
   - docker build -t smaingi1/multi-worker ./worker
+
+  #Log in the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push smaingi1/multi-client
+  - docker push smaingi1/multi-nginx
+  - docker push smaingi1/multi-server
+  - docker push smaingi1/multi-worker
